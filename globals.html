@@ -63,93 +63,43 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<div class="tsd-panel tsd-typography">
-				<p align="center">
-					<img src="https://i.imgur.com/zoFHpgH.png" height="160" alt="NabbitMQ Logo"/></a>
-					<h1>NabbitMQ</h1>
-				</p>
-				<p><strong>Node.js library for interacting with RabbitMQ based on RxJS streams</strong></p>
-				<p><strong>Any suggestions, any criticism and any help from the open source community is warmly welcomed!</strong></p>
-				<h3 id="description">Description</h3>
-				<p>NabbitMQ is a library that makes it easy for Node.js developers to interact with RabbitMQ. It&#39;s built on top of famous <a href="https://www.npmjs.com/package/amqplib">amqplib</a> package and it leverages RxJS streams.</p>
-				<p>Message queues naturally are streams of events, therefore using RxJS with them is an efficient way for developers to solve complex problems in a very elegant fashion.  </p>
-				<p>There are a lot of use cases, when we don&#39;t need to setup non standard exchanges and non trivial bindings to queues. In fact, most of the time what we actually need is just <strong>a simple queue</strong>, just <strong>out of the box</strong>. And NabbitMQ is here to help you with that! All you need is to provide custom name for the queue and you&#39;re ready to go, everything else is handled for you! </p>
-				<p>However, NabbitMQ allows you to use amqplib&#39;s promise-based api directly, so that <strong>you can build a more complex solution</strong> for your specific needs and still make use of RxJS streams.</p>
-				<h3 id="principles-and-reasons">Principles and reasons</h3>
-				<p>Obviously, one of the main reasons for this library to even exist is <strong>to have the threshold of entry to RabbitMQ world a bit lower</strong>, than it is now, but at the same time to allow us to make use of any piece of API that RabbitMQ provides us with.</p>
-				<p>The other reason is <strong>seamless error handling</strong> and helping developers to easily build fault tolerant solutions. For example, NabbitMQ will provide you with an <strong>automatically set up dead letter queue that listens to your main queue</strong>, unless you just don&#39;t need to have.</p>
-				<p>NabbitMQ has <strong>its own set of error classes</strong>, therefore it makes it easy for developers to debug and build solutions, that will survive even in the most &quot;cornery&quot; corner cases.</p>
-				<p>In the end, the main principle and goal is to have a solid and reliable solution out of the box, while working with RabbitMQ.</p>
-				<h3 id="quick-start">Quick start</h3>
-				<p>This snippet demonstrates how you can easily spin up a solid RabbitMQ setup and quickly start to consume a stream of events from it. Under the hood, NabbitMQ creates all necessary bindings, exchanges, dead letter queues and provides you with <strong>reconnect logic</strong>.</p>
-				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> { ConnectionFactory, ConsumerFactory, PublisherFactory } <span class="hljs-keyword">from</span> <span class="hljs-string">'nabbitmq'</span>;
-
-<span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">main</span>(<span class="hljs-params"></span>) </span>{
-  <span class="hljs-keyword">const</span> connectionFactory = <span class="hljs-keyword">new</span> ConnectionFactory();
-  connectionFactory.setUri(<span class="hljs-string">'amqp://localhost:5672'</span>);
-  <span class="hljs-keyword">const</span> connection = <span class="hljs-keyword">await</span> connectionFactory.newConnection();
-  <span class="hljs-keyword">const</span> consumerFactory = <span class="hljs-keyword">new</span> ConsumerFactory(connection);
-  consumerFactory.setConfigs({queue: {name: <span class="hljs-string">'super_queue'</span>}});
-  <span class="hljs-keyword">const</span> consumer = <span class="hljs-keyword">await</span> consumerFactory.newConsumer();
-
-  consumer.startConsuming().subscribe({next: <span class="hljs-built_in">console</span>.log, error: <span class="hljs-built_in">console</span>.error});
-
-  <span class="hljs-keyword">const</span> anotherConnection = <span class="hljs-keyword">await</span> connectionFactory.newConnection();
-  <span class="hljs-keyword">const</span> publisherFactory = <span class="hljs-keyword">new</span> PublisherFactory(anotherConnection);
-  publisherFactory.setConfigs({exchange: {name: consumer.getActiveConfigs().exchange.name}});
-  <span class="hljs-keyword">const</span> publisher = <span class="hljs-keyword">await</span> publisherFactory.newPublisher();
-  setInterval(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> publisher.publishMessage(Buffer.from(<span class="hljs-string">'hello hello!'</span>), <span class="hljs-string">`<span class="hljs-subst">${consumer.getActiveConfigs().queue.name}</span>_rk`</span>), <span class="hljs-number">1000</span>);
-}
-
-main();
-</code></pre>
-				<h2 id="docs">Docs</h2>
-				<h3 id="overview">Overview</h3>
-				<p>NabbitMQ provides you with two main abstractions: <strong>Publisher</strong> and <strong>Consumer</strong>. Each is represented by a class, that implements <strong>RabbitMqPeer</strong> interface.
-					They are supposed to be instantiated with PublisherFactory and ConsumerFactory classes.
-					However, there is a third abstraction called RabbitMqConnection.
-					This is a class, that holds an active connection data to the used RabbitMQ server.
-					It is injected into publishers and consumers via their factories.
-					Configs to setup RabbitMQ internal structure of exchanges, queues and bindings, are provided to factories in form of plain JavaScript/TypeScript objects.
-					There are interfaces for these objects, called <strong>ConsumerConfigs</strong> and <strong>PublisherConfigs</strong>.
-					Most of the values for these objects are optional, the consumers and publishers themselves fill them up with some standard values. For example, if your provide a queue name like <em>my_queue</em>, but don&#39;t provide an exchange name, the exchange will be called <em>exchange_my_queue</em> - you can rely on that.
-					Also, if <strong>dead letter queue</strong> has to be set up (which is optional), but no name for it provided, consumer will also result with default name like <em>my_queue_dlq</em>.
-				Dead letter exchange will have the following form: <em>exchange_my_queue_dlq</em>.</p>
-				<p>However, it is obvious that you might need to have a rare and not so generic RabbitMQ structure with more than one queue and more than one exchange.
-					Therefore there is an option for you not to provide these configs, but to provide a so called <strong>custom setup function</strong>.
-					This function accepts a connection object from underlying amqplib package.
-				Inside of this function you can do whatever you need, but it should return a <em>promise</em> that resolves with an object that contains amqplib channel instance and optional consumer&#39;s prefetch count, if you use this function to set up a consumer (not mandatory though, a default prefetch value will be set if not provided).</p>
-				<h3 id="classes">Classes</h3>
-				<p>Class: <strong>RabbitMqConnection</strong></p>
-				<p>Public methods: </p>
-				<ul>
-					<li>getAmqpConnection(): Connection; Returns connection object of underlying amqplib package.</li>
-					<li>getUri(): string; Returns current connection uri.</li>
-				</ul>
-				<p>Description: This class gives you an abstraction over a physical connection to the RabbitMQ server.</p>
-				<p>Class: <strong>ConnectionFactory</strong>
-				Public methods:</p>
-				<ul>
-					<li>setUri(uri: string): void; Sets uri with which we can connect to RabbitMQ server.</li>
-					<li>newConnection(): Promise<RabbitMqConnection>; Creates a new instance of RabbitMqConnection class. Establishes physical connection under the hood via amqplib.
-					Throws an instance of <strong>RabbitMqConnectionError</strong> class in case of failure.</li>
-				</ul>
-				<p>Description: Factory that produces instances of RabbitMqConnection.</p>
-				<p>Class: <strong>Consumer</strong>
-				Public methods:</p>
-				<ul>
-					<li>setConfigs(configs: ConsumerConfigs): void; Sets consumer configs. Accessible to users, but should only be used by ConsumerFactory.</li>
-					<li>setCustomSetupFunction(setupFunction: RabbitMqSetupFunction): void; Sets custom setup function. Accessible to users, but should only be used by ConsumerFactory.</li>
-					<li>init(connection: RabbitMqConnection): Promise<void>; Initializes consumer, builds/asserts specified by set configs/setup function RabbitMQ internal structure. Accessible to users, but should only be used by ConsumerFactory.</li>
-					<li>startConsuming(): ReplaySubject<Message>; Returns an instance of ReplaySubject<Message>, which you can subscribe to.
-					Items of this stream are amqplib&#39;s Message objects.</li>
-				</ul>
-			</div>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section ">
+							<h3>External modules</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_channel_cancelled_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>channel-<wbr>cancelled.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_channel_closed_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>channel-<wbr>closed.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_channel_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>channel.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_connection_closed_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>connection-<wbr>closed.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_connection_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>connection.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_consumer_setup_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>consumer-<wbr>setup.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_publisher_confirmation_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>publisher-<wbr>confirmation.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_publisher_setup_error_.html" class="tsd-kind-icon">"errors/rabbitmq-<wbr>publisher-<wbr>setup.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_errors_rabbitmq_error_.html" class="tsd-kind-icon">"errors/rabbitmq.error"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_factories_connection_factory_.html" class="tsd-kind-icon">"factories/connection-<wbr>factory"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_factories_consumer_factory_.html" class="tsd-kind-icon">"factories/consumer-<wbr>factory"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_factories_publisher_factory_.html" class="tsd-kind-icon">"factories/publisher-<wbr>factory"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_index_.html" class="tsd-kind-icon">"index"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_interfaces_consumer_configs_.html" class="tsd-kind-icon">"interfaces/consumer-<wbr>configs"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_interfaces_publisher_configs_.html" class="tsd-kind-icon">"interfaces/publisher-<wbr>configs"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_interfaces_rabbit_mq_setup_function_.html" class="tsd-kind-icon">"interfaces/rabbit-<wbr>mq-<wbr>setup-<wbr>function"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_interfaces_rabbitmq_peer_.html" class="tsd-kind-icon">"interfaces/rabbitmq-<wbr>peer"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_models_consumer_.html" class="tsd-kind-icon">"models/consumer"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_models_publisher_.html" class="tsd-kind-icon">"models/publisher"</a></li>
+								<li class="tsd-kind-external-module"><a href="modules/_models_rabbitmq_connection_.html" class="tsd-kind-icon">"models/rabbitmq-<wbr>connection"</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 			<nav class="tsd-navigation primary">
 				<ul>
-					<li class="globals  ">
+					<li class="globals current ">
 						<a href="globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
