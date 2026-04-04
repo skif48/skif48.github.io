@@ -1,0 +1,22 @@
+{{ define "title" }}{{ .Site.Title }}{{ end }}
+{{ define "main" }}
+{{ .Content }}
+{{ $blog := .Site.GetPage "section" "blog" }}
+{{ with $blog }}
+<h2>Recent Posts</h2>
+<ul class="blog-posts">
+  {{ range first 5 .Pages.ByDate.Reverse }}
+  <li>
+    <span>
+      <i>
+        <time datetime='{{ .Date.Format "2006-01-02" }}'>
+          {{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}
+        </time>
+      </i>
+    </span>
+    <a href="{{ .Permalink }}">{{ .Title }}</a>
+  </li>
+  {{ end }}
+</ul>
+{{ end }}
+{{ end }}

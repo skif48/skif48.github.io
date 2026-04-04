@@ -1,0 +1,9 @@
+baseURL = 'https://blog.vladusenko.io/'
+locale = 'en-us'
+title = "Vlad Usenko's Blog"
+theme = 'hugo-bearblog'
+author = 'Vlad Usenko'
+description = 'Test'
+
+[params]
+  favicon = '/thumbnail.svg'
